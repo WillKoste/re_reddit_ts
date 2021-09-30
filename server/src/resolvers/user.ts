@@ -2,12 +2,11 @@ import {Resolver, Mutation, Arg, Field, Ctx, ObjectType, Query, Int} from 'type-
 import {MyContext} from '../types';
 import {User} from '../entities/User';
 import argon2 from 'argon2';
-import {EntityManager} from '@mikro-orm/postgresql';
 import {COOKIE_NAME, FORGET_PASSWORD_PREFIX} from '../constants';
-import {UsernamePasswordInput} from './UsernamePasswordInput';
 import {validateRegister} from '../utils/validateRegister';
 import {sendEmail} from '../utils/sendEmail';
 import {v4 as uuidv4} from 'uuid';
+const errorObj = {field: 'username', message: 'Not Authorized'};
 
 @ObjectType()
 class FieldError {
@@ -18,7 +17,7 @@ class FieldError {
 }
 
 @ObjectType()
-class UserResponse {
+export class UserResponse {
 	@Field(() => [FieldError], {nullable: true})
 	errors?: FieldError[];
 
@@ -41,126 +40,103 @@ export class UserResolver {
 		return meUser;
 	}
 
-	@Mutation(() => Boolean)
-	async forgotPassword(@Arg('email') email: string, @Ctx() {em, redis}: MyContext) {
-		const user = await em.findOne(User, {email});
-		if (!user) {
-			// the email is not in the db
-			return true;
-		}
-
-		const token = uuidv4();
-
-		await redis.set(FORGET_PASSWORD_PREFIX + token, user.id, 'ex', 1000 * 60 * 60 * 24 * 3); // 3 days
-
-		await sendEmail(email, `<a href="http://localhost:3000/change-password/${token}">reset password</a>`);
-
-		return true;
-	}
-
-	// @Query(() => User, {nullable: true})
-	// async me(@Ctx() {req, em}: MyContext) {
-	// 	// you are not logged in
-	// 	if (!req.session.userId) {
-	// 		return null;
-	// 	}
-
-	// 	const user = await em.findOne(User, {id: req.session.userId});
-	// 	return user;
-	// }
-
-	@Mutation(() => UserResponse)
-	async register(@Arg('options') options: UsernamePasswordInput, @Ctx() {em, req}: MyContext): Promise<UserResponse> {
-		const errors = validateRegister(options);
-		if (errors) {
-			return {errors};
-		}
-
-		const hashedPassword = await argon2.hash(options.password);
-		let user;
+	/**
+	 * @name Register User
+	 */
+	@Mutation(() => UserResponse, {nullable: true})
+	async register(@Ctx() {em, req}: MyContext, @Arg('username', () => String) username: string, @Arg('password', () => String) password: string, @Arg('email', () => String) email: string): Promise<UserResponse> {
 		try {
-			const result = await (em as EntityManager)
-				.createQueryBuilder(User)
-				.getKnexQuery()
-				.insert({
-					username: options.username,
-					email: options.email,
-					password: hashedPassword,
-					created_at: new Date(),
-					updated_at: new Date()
-				})
-				.returning('*');
-			user = result[0];
+			const response = validateRegister(username, password, email);
+			if (response) {
+				return response;
+			}
+
+			const hash = await argon2.hash(password);
+			const newUser = em.create(User, {username, password: hash, email});
+			//// QUERY BUILDER - IN CASE I EVER NEED IT \\\\
+			// const [user] = await (em as EntityManager).createQueryBuilder(User).getKnexQuery().insert({username, password: hash, createdAt: new Date(), updatedAt: new Date()}).returning('*');
+			await em.persistAndFlush(newUser);
+			req.session.userId = newUser.id;
+			return {user: newUser};
 		} catch (err) {
-			//|| err.detail.includes("already exists")) {
-			// duplicate username error
+			console.error(err);
 			if (err.code === '23505') {
 				return {
-					errors: [
-						{
-							field: 'username',
-							message: 'username already taken'
-						}
-					]
+					errors: [{field: 'username', message: 'This username is already taken'}]
 				};
 			}
+			return {errors: [{field: 'register', message: `A registration attempt for the username ${username} was unsuccessful`}]};
+		}
+	}
+
+	/**
+	 * @name Login
+	 */
+	@Mutation(() => UserResponse, {nullable: true})
+	async login(@Ctx() {em, req}: MyContext, @Arg('usernameOrEmail', () => String) usernameOrEmail: string, @Arg('password', () => String) password: string): Promise<UserResponse> {
+		const user = await em.findOne(User, usernameOrEmail.match(/^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/) ? {email: usernameOrEmail} : {username: usernameOrEmail});
+		if (!user) {
+			return {
+				errors: [errorObj]
+			};
 		}
 
-		// store user id session
-		// this will set a cookie on the user
-		// keep them logged in
-		req.session.userId = user.id;
+		const isMatch = await argon2.verify(user.password, password);
+		if (!isMatch) {
+			return {
+				errors: [errorObj]
+			};
+		}
 
+		req.session.userId = user.id;
 		return {user};
 	}
 
-	@Mutation(() => UserResponse)
-	async login(@Arg('usernameOrEmail') usernameOrEmail: string, @Arg('password') password: string, @Ctx() {em, req}: MyContext): Promise<UserResponse> {
-		const user = await em.findOne(User, usernameOrEmail.includes('@') ? {email: usernameOrEmail} : {username: usernameOrEmail});
-		if (!user) {
-			return {
-				errors: [
-					{
-						field: 'usernameOrEmail',
-						message: "that username doesn't exist"
-					}
-				]
-			};
-		}
-		const valid = await argon2.verify(user.password, password);
-		if (!valid) {
-			return {
-				errors: [
-					{
-						field: 'password',
-						message: 'incorrect password'
-					}
-				]
-			};
-		}
-
-		req.session.userId = user.id;
-
-		return {
-			user
-		};
-	}
-
+	/**
+	 * @name Logout
+	 */
 	@Mutation(() => Boolean)
 	logout(@Ctx() {req, res}: MyContext) {
 		return new Promise((resolve) =>
 			req.session.destroy((err) => {
-				res.clearCookie(COOKIE_NAME);
 				if (err) {
-					console.log(err);
+					console.error(err);
 					resolve(false);
 					return;
 				}
-
+				res.clearCookie(COOKIE_NAME);
 				resolve(true);
 			})
 		);
 	}
+
+	/**
+	 * @name Forgot Password
+	 */
+	@Mutation(() => Boolean)
+	async forgotPassword(@Arg('email') email: string, @Ctx() {em, redis}: MyContext) {
+		const theUser = await em.findOne(User, {email});
+		if (!theUser) {
+			return true;
+		}
+
+		const token: string = uuidv4();
+		await redis.set(FORGET_PASSWORD_PREFIX + token, theUser.id, 'ex', 1000 * 60 * 60 * 3);
+
+		await sendEmail(
+			email,
+			`
+			<div>
+				<h1>Request to reset email</h1>
+				<p><a href="http://localhos:3000/change-password/${token}">Click here</a> to reset your password. you will be securely redirected to our site.</p>
+				<p>If you did not make this request, you do not need to do anything.</p>
+			</div>
+		`
+		);
+		return true;
+	}
+
+	//////////////////////////// ADMIN \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 	/**
 	 * @name Get All Users
@@ -178,5 +154,34 @@ export class UserResolver {
 	user(@Ctx() ctx: MyContext, @Arg('id', () => Int) id: number) {
 		const theUser = ctx.em.findOne(User, {id});
 		return theUser;
+	}
+
+	/**
+	 * @name Update User
+	 */
+	@Mutation(() => User, {nullable: true})
+	async updateUser(@Ctx() ctx: MyContext, @Arg('id', () => Int) id: number, @Arg('username', () => String) username: string): Promise<User | null> {
+		const theUser = await ctx.em.findOne(User, {id});
+		if (!theUser) {
+			return null;
+		}
+		if (typeof theUser.username !== 'undefined') {
+			theUser.username = username;
+			await ctx.em.persistAndFlush(theUser);
+		}
+		return theUser;
+	}
+
+	/**
+	 * @name Delete User
+	 */
+	@Mutation(() => Boolean, {nullable: true})
+	async deleteUser(@Ctx() ctx: MyContext, @Arg('id', () => Int) id: number): Promise<Boolean> {
+		const theUser = await ctx.em.findOne(User, {id});
+		if (!theUser) {
+			return false;
+		}
+		await ctx.em.remove(theUser).flush();
+		return true;
 	}
 }

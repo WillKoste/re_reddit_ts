@@ -4,16 +4,25 @@ import {MyContext} from '../types';
 
 @Resolver()
 export class PostResolver {
+	/**
+	 * @name Get All Posts
+	 */
 	@Query(() => [Post])
 	async posts(@Ctx() {em}: MyContext): Promise<Post[]> {
 		return em.find(Post, {});
 	}
 
+	/**
+	 * @name Get Post By ID
+	 */
 	@Query(() => Post, {nullable: true})
 	post(@Arg('id') id: number, @Ctx() {em}: MyContext): Promise<Post | null> {
 		return em.findOne(Post, {id});
 	}
 
+	/**
+	 * @name Create Post
+	 */
 	@Mutation(() => Post)
 	async createPost(@Arg('title') title: string, @Ctx() {em}: MyContext): Promise<Post> {
 		const post = em.create(Post, {title});
@@ -21,6 +30,9 @@ export class PostResolver {
 		return post;
 	}
 
+	/**
+	 * @name Update Post
+	 */
 	@Mutation(() => Post, {nullable: true})
 	async updatePost(@Arg('id') id: number, @Arg('title', () => String, {nullable: true}) title: string, @Ctx() {em}: MyContext): Promise<Post | null> {
 		const post = await em.findOne(Post, {id});
@@ -34,6 +46,9 @@ export class PostResolver {
 		return post;
 	}
 
+	/**
+	 * @name Delete User
+	 */
 	@Mutation(() => Boolean)
 	async deletePost(@Arg('id') id: number, @Ctx() {em}: MyContext): Promise<boolean> {
 		await em.nativeDelete(Post, {id});
