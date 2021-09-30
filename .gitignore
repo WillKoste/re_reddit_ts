@@ -1,0 +1,11 @@
+# GLOBAL
+node_modules/
+*.env
+
+# SERVER
+server/dist
+server/server.key
+server/server.cert
+server/constants.ts
+
+# CLIENT
