@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import 'colors';
-// import path from 'path';
-// import fs from 'fs';
-// import https from 'https';
+import path from 'path';
+import fs from 'fs';
+import https from 'https';
 import {MikroORM} from '@mikro-orm/core';
 import {__prod__, COOKIE_NAME, PORT, NODE_ENV, SESSION_SECRET, REDIS_PORT} from './constants';
 import microConfig from './mikro-orm.config';
@@ -56,9 +56,17 @@ const main = async () => {
 		const port = PORT || 5001;
 		const mode = NODE_ENV || 'DEFAULT';
 
-		app.listen(port, () => {
-			console.log(`Express server running on port ${port}, in ${mode} mode!`.cyan.underline.bold);
-		});
+		https
+			.createServer(
+				{
+					key: fs.readFileSync(path.join(__dirname, '../', './server.key')),
+					cert: fs.readFileSync(path.join(__dirname, '../', './server.cert'))
+				},
+				app
+			)
+			.listen(port, () => {
+				console.log(`Express server running on port ${port}, in ${mode} mode!`.cyan.underline.bold);
+			});
 	} catch (err) {
 		console.error(err);
 	}

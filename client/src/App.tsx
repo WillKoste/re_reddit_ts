@@ -4,6 +4,12 @@ import {client} from './config/client';
 import {ThemeProvider, CSSReset, ColorModeProvider} from '@chakra-ui/react';
 import theme from './theme';
 
+import Navbar from './components/layout/Navbar';
+import NotFound from './components/pages/NotFound';
+import Splash from './components/pages/Splash';
+import Login from './components/pages/Login';
+import Register from './components/pages/Register';
+
 const App = () => {
 	return (
 		<Provider value={client}>
@@ -11,12 +17,13 @@ const App = () => {
 				<ThemeProvider theme={theme}>
 					<ColorModeProvider options={{initialColorMode: 'light'}}>
 						<CSSReset />
-						<div>
-							<h1>Hello</h1>
-							<Switch>
-								<Route />
-							</Switch>
-						</div>
+						<Navbar />
+						<Switch>
+							<Route exact path='/' component={Splash} />
+							<Route exact path='/login' component={Login} />
+							<Route exact path='/register' component={Register} />
+							<Route component={NotFound} />
+						</Switch>
 					</ColorModeProvider>
 				</ThemeProvider>
 			</Router>
