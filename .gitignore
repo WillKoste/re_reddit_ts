@@ -9,3 +9,5 @@ server/server.cert
 server/constants.ts
 
 # CLIENT
+client/node_modules/
+client/build/
