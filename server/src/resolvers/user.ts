@@ -128,12 +128,47 @@ export class UserResolver {
 			`
 			<div>
 				<h1>Request to reset email</h1>
-				<p><a href="http://localhos:3000/change-password/${token}">Click here</a> to reset your password. you will be securely redirected to our site.</p>
+				<p><a href="http://localhost:3000/change-password/${token}">Click here</a> to reset your password. you will be securely redirected to our site.</p>
 				<p>If you did not make this request, you do not need to do anything.</p>
 			</div>
 		`
 		);
 		return true;
+	}
+
+	/**
+	 * @name changePassword
+	 */
+	@Mutation(() => UserResponse)
+	async changePassword(@Ctx() {redis, em, req}: MyContext, @Arg('resetId', () => String) resetId: string, @Arg('newPassword', () => String) newPassword: string): Promise<UserResponse> {
+		if (newPassword.length < 6) {
+			return {
+				errors: [{field: 'newPassword', message: 'The password must be 6 characters or greater'}]
+			};
+		}
+
+		const key = FORGET_PASSWORD_PREFIX + resetId;
+		const userId = await redis.get(key);
+		if (!userId) {
+			return {
+				errors: [{field: 'resetId', message: 'ResetID token is invalid'}]
+			};
+		}
+
+		const theUser = await em.findOne(User, {id: parseInt(userId)});
+		if (!theUser) {
+			return {
+				errors: [{field: 'resetId', message: 'The user could not be found'}]
+			};
+		}
+		theUser.password = await argon2.hash(newPassword);
+		await em.persistAndFlush(theUser);
+
+		await redis.del(key);
+
+		req.session.userId = theUser.id;
+
+		return {user: theUser};
 	}
 
 	//////////////////////////// ADMIN \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
