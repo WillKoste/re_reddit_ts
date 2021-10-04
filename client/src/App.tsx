@@ -9,6 +9,7 @@ import NotFound from './components/pages/NotFound';
 import Splash from './components/pages/Splash';
 import Login from './components/pages/Login';
 import Register from './components/pages/Register';
+import ChangePassword from './components/pages/ChangePassword';
 
 const App = () => {
 	return (
@@ -22,6 +23,7 @@ const App = () => {
 							<Route exact path='/' component={Splash} />
 							<Route exact path='/login' component={Login} />
 							<Route exact path='/register' component={Register} />
+							<Route exact path='/change-password/:resetId' component={ChangePassword} />
 							<Route component={NotFound} />
 						</Switch>
 					</ColorModeProvider>

@@ -5,6 +5,8 @@ import {Heading, Button} from '@chakra-ui/react';
 import {Form, Formik} from 'formik';
 import InputField from '../layout/InputField';
 import {Link} from 'react-router-dom';
+import {useRegisterMutation} from '../../generated/graphql';
+import toErrorMap from '../../utils/toErrorMap';
 
 interface RegisterProps {
 	history: History;
@@ -17,17 +19,32 @@ const Register: React.FC<RegisterProps> = ({history}) => {
 		password: ''
 	};
 
+	const [{data}, register] = useRegisterMutation();
+
 	return (
 		<Wrapper variant='small'>
 			<Heading as='h1' size='3xl' mb={8}>
 				Register
 			</Heading>
-			<Formik initialValues={formData} onSubmit={(values, {setErrors, setSubmitting}) => {}}>
+			<Formik
+				initialValues={formData}
+				onSubmit={async (values, {setErrors, setSubmitting}) => {
+					const response = await register(values);
+
+					if (response.data?.register?.errors) {
+						setErrors(toErrorMap(response.data.register.errors));
+					} else if (response.data?.register?.user) {
+						history.push('/');
+					}
+					setSubmitting(false);
+				}}
+			>
 				{({handleSubmit, isSubmitting}) => (
 					<Form onSubmit={handleSubmit}>
 						<InputField name='username' label='Username' />
 						<InputField name='email' label='Email' />
-						<Button type='submit' bg='purple.300' _hover={{bg: 'purple.400'}} w='100%' display='block'>
+						<InputField name='password' label='Password' type='password' />
+						<Button type='submit' bg='purple.300' _hover={{bg: 'purple.400'}} w='100%' display='block' isLoading={isSubmitting}>
 							Register
 						</Button>
 					</Form>

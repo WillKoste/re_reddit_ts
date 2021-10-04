@@ -31,7 +31,7 @@ const Login: React.FC<LoginProps> = ({history}) => {
 					const response = await login(values);
 					if (response.data?.login?.errors) {
 						setErrors(toErrorMap(response.data.login.errors));
-					} else {
+					} else if (response.data?.login?.user) {
 						history.push('/');
 					}
 					setSubmitting(false);
@@ -39,9 +39,9 @@ const Login: React.FC<LoginProps> = ({history}) => {
 			>
 				{({handleSubmit, isSubmitting}) => (
 					<Form onSubmit={handleSubmit}>
-						<InputField name='emailOrUsername' label='Username or email' />
+						<InputField name='usernameOrEmail' label='Username or email' />
 						<InputField name='password' label='Password' type='password' />
-						<Button display='block' w='100%' size='md' bg='purple.300' _hover={{bg: 'purple.400'}} isLoading={isSubmitting} type='submit'>
+						<Button type='submit' display='block' w='100%' bg='blue.200' _hover={{bg: 'blue.300'}} isLoading={isSubmitting}>
 							Login
 						</Button>
 					</Form>
