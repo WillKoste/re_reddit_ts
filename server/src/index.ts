@@ -3,9 +3,7 @@ import 'colors';
 import path from 'path';
 import fs from 'fs';
 import https from 'https';
-import {MikroORM} from '@mikro-orm/core';
 import {__prod__, COOKIE_NAME, PORT, NODE_ENV, SESSION_SECRET, REDIS_PORT} from './constants';
-import microConfig from './mikro-orm.config';
 import express from 'express';
 import {ApolloServer} from 'apollo-server-express';
 import {buildSchema} from 'type-graphql';
@@ -16,11 +14,11 @@ import Redis from 'ioredis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import cors from 'cors';
+import {createTypeormConnection} from './typeormConfig';
 
 const main = async () => {
 	try {
-		const orm = await MikroORM.init(microConfig);
-		await orm.getMigrator().up();
+		createTypeormConnection();
 		const app = express();
 		const RedisStore = connectRedis(session);
 		const redis = new Redis();
@@ -47,7 +45,7 @@ const main = async () => {
 				resolvers: [HelloResolver, PostResolver, UserResolver],
 				validate: false
 			}),
-			context: ({req, res}) => ({em: orm.em, req, res, redis})
+			context: ({req, res}) => ({req, res, redis})
 		});
 
 		await apolloServer.start();

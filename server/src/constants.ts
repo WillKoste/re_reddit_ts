@@ -7,6 +7,7 @@ export const COOKIE_NAME = 'wid';
 export const FORGET_PASSWORD_PREFIX = 'forget-password:';
 export const SESSION_SECRET = 'DalmatiansRKool';
 export const DATABASE_TYPE = 'postgresql';
+export const DB_TYPE = 'postgres';
 export const PG_DATABASE = 'awad_full_stack';
 export const PG_USER = 'postgres';
 export const PG_PASSWORD = 'My2dogs95';

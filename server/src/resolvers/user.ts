@@ -31,12 +31,12 @@ export class UserResolver {
 	 * @name Me Query
 	 */
 	@Query(() => User, {nullable: true})
-	async me(@Ctx() {req, em}: MyContext) {
+	async me(@Ctx() {req}: MyContext) {
 		if (!req.session.userId) {
 			return null;
 		}
 
-		const meUser = await em.findOne(User, {id: req.session.userId});
+		const meUser = await User.findOne(req.session.userId);
 		return meUser;
 	}
 
@@ -44,7 +44,7 @@ export class UserResolver {
 	 * @name Register User
 	 */
 	@Mutation(() => UserResponse, {nullable: true})
-	async register(@Ctx() {em, req}: MyContext, @Arg('username', () => String) username: string, @Arg('password', () => String) password: string, @Arg('email', () => String) email: string): Promise<UserResponse> {
+	async register(@Ctx() {req}: MyContext, @Arg('username', () => String) username: string, @Arg('password', () => String) password: string, @Arg('email', () => String) email: string): Promise<UserResponse> {
 		try {
 			const response = validateRegister(username, password, email);
 			if (response) {
@@ -52,12 +52,10 @@ export class UserResolver {
 			}
 
 			const hash = await argon2.hash(password);
-			const newUser = em.create(User, {username, password: hash, email});
-			//// QUERY BUILDER - IN CASE I EVER NEED IT \\\\
-			// const [user] = await (em as EntityManager).createQueryBuilder(User).getKnexQuery().insert({username, password: hash, createdAt: new Date(), updatedAt: new Date()}).returning('*');
-			await em.persistAndFlush(newUser);
-			req.session.userId = newUser.id;
-			return {user: newUser};
+			const newUser = User.create({username, password: hash, email}).save();
+			const newThing = await newUser;
+			req.session.userId = newThing.id;
+			return {user: newThing};
 		} catch (err) {
 			console.error(err);
 			if (err.code === '23505') {
@@ -73,21 +71,19 @@ export class UserResolver {
 	 * @name Login
 	 */
 	@Mutation(() => UserResponse, {nullable: true})
-	async login(@Ctx() {em, req}: MyContext, @Arg('usernameOrEmail', () => String) usernameOrEmail: string, @Arg('password', () => String) password: string): Promise<UserResponse> {
-		const user = await em.findOne(User, usernameOrEmail.match(/^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/) ? {email: usernameOrEmail} : {username: usernameOrEmail});
+	async login(@Ctx() {req}: MyContext, @Arg('usernameOrEmail', () => String) usernameOrEmail: string, @Arg('password', () => String) password: string): Promise<UserResponse> {
+		const user = await User.findOne({where: usernameOrEmail.match(/^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/) ? {email: usernameOrEmail} : {username: usernameOrEmail}});
 		if (!user) {
 			return {
 				errors: [errorObj]
 			};
 		}
-
 		const isMatch = await argon2.verify(user.password, password);
 		if (!isMatch) {
 			return {
 				errors: [errorObj]
 			};
 		}
-
 		req.session.userId = user.id;
 		return {user};
 	}
@@ -114,12 +110,11 @@ export class UserResolver {
 	 * @name Forgot Password
 	 */
 	@Mutation(() => Boolean)
-	async forgotPassword(@Arg('email') email: string, @Ctx() {em, redis}: MyContext) {
-		const theUser = await em.findOne(User, {email});
+	async forgotPassword(@Arg('email') email: string, @Ctx() {redis}: MyContext): Promise<Boolean> {
+		const theUser = await User.findOne({where: {email}});
 		if (!theUser) {
 			return true;
 		}
-
 		const token: string = uuidv4();
 		await redis.set(FORGET_PASSWORD_PREFIX + token, theUser.id, 'ex', 1000 * 60 * 60 * 3);
 
@@ -140,7 +135,7 @@ export class UserResolver {
 	 * @name changePassword
 	 */
 	@Mutation(() => UserResponse)
-	async changePassword(@Ctx() {redis, em, req}: MyContext, @Arg('resetId', () => String) resetId: string, @Arg('newPassword', () => String) newPassword: string): Promise<UserResponse> {
+	async changePassword(@Ctx() {redis, req}: MyContext, @Arg('resetId', () => String) resetId: string, @Arg('newPassword', () => String) newPassword: string): Promise<UserResponse> {
 		if (newPassword.length < 6) {
 			return {
 				errors: [{field: 'newPassword', message: 'The password must be 6 characters or greater'}]
@@ -155,15 +150,14 @@ export class UserResolver {
 			};
 		}
 
-		const theUser = await em.findOne(User, {id: parseInt(userId)});
+		const userIdNum = parseInt(userId);
+		const theUser = await User.findOne({id: userIdNum});
 		if (!theUser) {
 			return {
 				errors: [{field: 'resetId', message: 'The user could not be found'}]
 			};
 		}
-		theUser.password = await argon2.hash(newPassword);
-		await em.persistAndFlush(theUser);
-
+		await User.update({id: userIdNum}, {password: await argon2.hash(newPassword)});
 		await redis.del(key);
 
 		req.session.userId = theUser.id;
@@ -177,8 +171,8 @@ export class UserResolver {
 	 * @name Get All Users
 	 */
 	@Query(() => [User])
-	users(@Ctx() ctx: MyContext): Promise<User[]> {
-		const theUsers = ctx.em.find(User, {});
+	async users(): Promise<User[]> {
+		const theUsers = await User.find();
 		return theUsers;
 	}
 
@@ -186,8 +180,8 @@ export class UserResolver {
 	 * @name Get User By ID
 	 */
 	@Query(() => User, {nullable: true})
-	user(@Ctx() ctx: MyContext, @Arg('id', () => Int) id: number) {
-		const theUser = ctx.em.findOne(User, {id});
+	async user(@Arg('id', () => Int) id: number): Promise<User | undefined> {
+		const theUser = await User.findOne(id);
 		return theUser;
 	}
 
@@ -195,14 +189,13 @@ export class UserResolver {
 	 * @name Update User
 	 */
 	@Mutation(() => User, {nullable: true})
-	async updateUser(@Ctx() ctx: MyContext, @Arg('id', () => Int) id: number, @Arg('username', () => String) username: string): Promise<User | null> {
-		const theUser = await ctx.em.findOne(User, {id});
+	async updateUser(@Arg('id', () => Int) id: number, @Arg('username', () => String) username: string): Promise<User | undefined> {
+		const theUser = await User.findOne(id);
 		if (!theUser) {
-			return null;
+			return undefined;
 		}
 		if (typeof theUser.username !== 'undefined') {
-			theUser.username = username;
-			await ctx.em.persistAndFlush(theUser);
+			await User.update({id}, {username});
 		}
 		return theUser;
 	}
@@ -211,12 +204,8 @@ export class UserResolver {
 	 * @name Delete User
 	 */
 	@Mutation(() => Boolean, {nullable: true})
-	async deleteUser(@Ctx() ctx: MyContext, @Arg('id', () => Int) id: number): Promise<Boolean> {
-		const theUser = await ctx.em.findOne(User, {id});
-		if (!theUser) {
-			return false;
-		}
-		await ctx.em.remove(theUser).flush();
+	async deleteUser(@Arg('id', () => Int) id: number): Promise<Boolean> {
+		await User.delete(id);
 		return true;
 	}
 }
