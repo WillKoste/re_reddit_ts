@@ -10,6 +10,7 @@ import Splash from './components/pages/Splash';
 import Login from './components/pages/Login';
 import Register from './components/pages/Register';
 import ChangePassword from './components/pages/ChangePassword';
+import ForgotPassword from './components/pages/ForgotPassword';
 
 const App = () => {
 	return (
@@ -24,6 +25,7 @@ const App = () => {
 							<Route exact path='/login' component={Login} />
 							<Route exact path='/register' component={Register} />
 							<Route exact path='/change-password/:resetId' component={ChangePassword} />
+							<Route exact path='/forgot-password' component={ForgotPassword} />
 							<Route component={NotFound} />
 						</Switch>
 					</ColorModeProvider>

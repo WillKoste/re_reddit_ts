@@ -54,6 +54,11 @@ const Login: React.FC<LoginProps> = ({history}) => {
 				</Link>{' '}
 				to create an account.
 			</p>
+			<p>
+				<Link to='/forgot-password' style={{color: '#949494', fontWeight: 400}}>
+					Forgot your password?
+				</Link>
+			</p>
 		</Wrapper>
 	);
 };
