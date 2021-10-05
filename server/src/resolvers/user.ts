@@ -52,10 +52,9 @@ export class UserResolver {
 			}
 
 			const hash = await argon2.hash(password);
-			const newUser = User.create({username, password: hash, email}).save();
-			const newThing = await newUser;
-			req.session.userId = newThing.id;
-			return {user: newThing};
+			const newUser = await User.create({username, password: hash, email}).save();
+			req.session.userId = newUser.id;
+			return {user: newUser};
 		} catch (err) {
 			console.error(err);
 			if (err.code === '23505') {
