@@ -1,18 +1,15 @@
-import React from 'react';
-import {History} from 'history';
+import React, {useState} from 'react';
 import Wrapper from '../layout/Wrapper';
 import {Heading, Button} from '@chakra-ui/react';
 import {Form, Formik} from 'formik';
 import InputField from '../layout/InputField';
 import toErrorMap from '../../utils/toErrorMap';
 import {useLoginMutation} from '../../generated/graphql';
-import {Link} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 
-interface LoginProps {
-	history: History;
-}
+interface LoginProps extends RouteComponentProps<{}, any, {pathname: string}> {}
 
-const Login: React.FC<LoginProps> = ({history}) => {
+const Login: React.FC<LoginProps> = ({history, location}) => {
 	const formData = {
 		usernameOrEmail: '',
 		password: ''
@@ -32,7 +29,11 @@ const Login: React.FC<LoginProps> = ({history}) => {
 					if (response.data?.login?.errors) {
 						setErrors(toErrorMap(response.data.login.errors));
 					} else if (response.data?.login?.user) {
-						history.push('/');
+						if (!location.state) {
+							history.push('/');
+						} else {
+							history.push(location.state.pathname);
+						}
 					}
 					setSubmitting(false);
 				}}

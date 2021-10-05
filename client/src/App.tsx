@@ -11,6 +11,9 @@ import Login from './components/pages/Login';
 import Register from './components/pages/Register';
 import ChangePassword from './components/pages/ChangePassword';
 import ForgotPassword from './components/pages/ForgotPassword';
+import CreatePost from './components/pages/CreatePost';
+import Posts from './components/pages/Posts';
+import PostPage from './components/pages/PostPage';
 
 const App = () => {
 	return (
@@ -26,6 +29,9 @@ const App = () => {
 							<Route exact path='/register' component={Register} />
 							<Route exact path='/change-password/:resetId' component={ChangePassword} />
 							<Route exact path='/forgot-password' component={ForgotPassword} />
+							<Route exact path='/create-post' component={CreatePost} />
+							<Route exact path='/posts' component={Posts} />
+							<Route exact path='/posts/:postId' component={PostPage} />
 							<Route component={NotFound} />
 						</Switch>
 					</ColorModeProvider>

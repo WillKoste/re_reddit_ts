@@ -19,7 +19,7 @@ const Register: React.FC<RegisterProps> = ({history}) => {
 		password: ''
 	};
 
-	const [{data}, register] = useRegisterMutation();
+	const [{}, register] = useRegisterMutation();
 
 	return (
 		<Wrapper variant='small'>

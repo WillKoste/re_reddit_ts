@@ -1,11 +1,11 @@
-query Posts {
-	posts {
+query Post($id: Float!) {
+	post(id: $id) {
 		id
 		title
 		text
 		points
 		creatorId
-		updatedAt
 		createdAt
+		updatedAt
 	}
 }
