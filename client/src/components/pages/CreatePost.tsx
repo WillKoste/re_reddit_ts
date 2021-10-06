@@ -51,6 +51,9 @@ const CreatePost: React.FC<CreatePostProps> = ({history, location}) => {
 					</Form>
 				)}
 			</Formik>
+			<Button display='inline-block' w='100%' my={2} onClick={() => history.push('/posts')}>
+				Go back
+			</Button>
 		</Wrapper>
 	);
 };

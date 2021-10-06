@@ -32,9 +32,6 @@ const Navbar: React.FC<NavbarProps> = ({history}) => {
 							<Heading size='lg'>{data.me.username}</Heading>
 						</Box>
 						<ListItem listStyleType='none' mx={3} alignSelf='center'>
-							<NavLink to='/create-post'>Create Post</NavLink>
-						</ListItem>
-						<ListItem listStyleType='none' mx={3} alignSelf='center'>
 							<NavLink to='/posts'>Posts</NavLink>
 						</ListItem>
 					</UnorderedList>

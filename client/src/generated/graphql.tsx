@@ -92,6 +92,7 @@ export type Post = {
   id: Scalars['Float'];
   points: Scalars['Float'];
   text: Scalars['String'];
+  textSnippet: Scalars['String'];
   title: Scalars['String'];
   updatedAt: Scalars['String'];
 };
@@ -114,6 +115,12 @@ export type Query = {
 
 export type QueryPostArgs = {
   id: Scalars['Float'];
+};
+
+
+export type QueryPostsArgs = {
+  cursor?: Maybe<Scalars['String']>;
+  limit: Scalars['Int'];
 };
 
 
@@ -198,10 +205,13 @@ export type PostQueryVariables = Exact<{
 
 export type PostQuery = { __typename?: 'Query', post?: { __typename?: 'Post', id: number, title: string, text: string, points: number, creatorId: number, createdAt: string, updatedAt: string } | null | undefined };
 
-export type PostsQueryVariables = Exact<{ [key: string]: never; }>;
+export type PostsQueryVariables = Exact<{
+  limit: Scalars['Int'];
+  cursor?: Maybe<Scalars['String']>;
+}>;
 
 
-export type PostsQuery = { __typename?: 'Query', posts: Array<{ __typename?: 'Post', id: number, title: string, text: string, points: number, creatorId: number, updatedAt: string, createdAt: string }> };
+export type PostsQuery = { __typename?: 'Query', posts: Array<{ __typename?: 'Post', id: number, title: string, textSnippet: string, points: number, creatorId: number, updatedAt: string, createdAt: string }> };
 
 export const RegularErrorFragmentDoc = gql`
     fragment RegularError on FieldError {
@@ -322,11 +332,11 @@ export function usePostQuery(options: Omit<Urql.UseQueryArgs<PostQueryVariables>
   return Urql.useQuery<PostQuery>({ query: PostDocument, ...options });
 };
 export const PostsDocument = gql`
-    query Posts {
-  posts {
+    query Posts($limit: Int!, $cursor: String) {
+  posts(limit: $limit, cursor: $cursor) {
     id
     title
-    text
+    textSnippet
     points
     creatorId
     updatedAt
