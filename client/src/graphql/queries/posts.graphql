@@ -9,6 +9,11 @@ query Posts($limit: Int!, $cursor: String) {
 			updatedAt
 			creatorId
 			textSnippet
+			creator {
+				id
+				username
+				email
+			}
 		}
 	}
 }

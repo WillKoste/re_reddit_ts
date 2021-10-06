@@ -36,17 +36,19 @@ const Posts: React.FC<PostsProps> = () => {
 					</Flex>
 					<Stack spacing={8} mt={10}>
 						{data!.posts.posts.map((post) => {
-							console.log(new Date(post.createdAt));
+							console.log(new Date(post.createdAt).getTime());
 							return (
 								<Box key={post.id} p={6} shadow='md' display='flex' alignItems='center' justifyContent='space-between'>
 									<Box>
 										<Link to={`/posts/${post.id}`}>
-											<Heading size='md'>{post.title}</Heading>
+											<Heading size='md' mb={1}>
+												{post.title}
+											</Heading>
 											<Text mb={2} color='gray.400' fontSize='sm'>
-												By: {post.creatorId}
+												By: {post.creator.username}
 											</Text>
 											<Text mb={2} color='gray.400' fontSize='sm'>
-												Posted on: {new Date(post.createdAt).toUTCString()}
+												Posted on: {post.createdAt}
 											</Text>
 											<Text>{post.textSnippet}</Text>
 										</Link>

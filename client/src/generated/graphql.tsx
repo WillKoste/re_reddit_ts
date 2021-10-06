@@ -94,6 +94,7 @@ export type PaginatedPosts = {
 export type Post = {
   __typename?: 'Post';
   createdAt: Scalars['String'];
+  creator: User;
   creatorId: Scalars['Float'];
   id: Scalars['Float'];
   points: Scalars['Float'];
@@ -217,7 +218,7 @@ export type PostsQueryVariables = Exact<{
 }>;
 
 
-export type PostsQuery = { __typename?: 'Query', posts: { __typename?: 'PaginatedPosts', hasMore: boolean, posts: Array<{ __typename?: 'Post', id: number, title: string, points: number, createdAt: string, updatedAt: string, creatorId: number, textSnippet: string }> } };
+export type PostsQuery = { __typename?: 'Query', posts: { __typename?: 'PaginatedPosts', hasMore: boolean, posts: Array<{ __typename?: 'Post', id: number, title: string, points: number, createdAt: string, updatedAt: string, creatorId: number, textSnippet: string, creator: { __typename?: 'User', id: number, username: string, email: string } }> } };
 
 export const RegularErrorFragmentDoc = gql`
     fragment RegularError on FieldError {
@@ -349,6 +350,11 @@ export const PostsDocument = gql`
       updatedAt
       creatorId
       textSnippet
+      creator {
+        id
+        username
+        email
+      }
     }
   }
 }
