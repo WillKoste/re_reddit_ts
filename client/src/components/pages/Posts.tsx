@@ -36,7 +36,6 @@ const Posts: React.FC<PostsProps> = () => {
 					</Flex>
 					<Stack spacing={8} mt={10}>
 						{data!.posts.posts.map((post) => {
-							console.log(new Date(post.createdAt).getTime());
 							return (
 								<Box key={post.id} p={6} shadow='md' display='flex' alignItems='center' justifyContent='space-between'>
 									<Box>

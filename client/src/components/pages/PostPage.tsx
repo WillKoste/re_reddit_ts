@@ -12,6 +12,7 @@ const PostPage: React.FC<PostPageProps> = ({match}) => {
 
 	useEffect(() => {
 		getPost();
+		console.log({data});
 	}, [fetching]);
 
 	return (

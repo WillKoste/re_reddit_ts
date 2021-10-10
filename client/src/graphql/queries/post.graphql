@@ -7,5 +7,10 @@ query Post($id: Float!) {
 		creatorId
 		createdAt
 		updatedAt
+		creator {
+			id
+			username
+			email
+		}
 	}
 }

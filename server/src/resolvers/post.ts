@@ -40,7 +40,7 @@ export class PostResolver {
 		}
 		const posts = await getConnection().query(
 			`
-			select p.*, json_build_object('id', u.id,'username', u.username, 'email', u.email) "creator" from "post" p
+			select p.*, json_build_object('id', u.id,'username', u.username, 'email', u.email, 'createdAt', u."createdAt") "creator" from "post" p
 				inner join public."user" u
 				on u.id = p."creatorId"
 				${cursor ? `where p."createdAt" < $2` : ''}
@@ -49,7 +49,6 @@ export class PostResolver {
 		`,
 			queryVars
 		);
-		console.log({posts, length: posts.length});
 		const hasMore = posts.length === realLimitPlusOne;
 		return {posts: posts.slice(0, realLimit), hasMore};
 	}
@@ -59,7 +58,13 @@ export class PostResolver {
 	 */
 	@Query(() => Post, {nullable: true})
 	async post(@Arg('id') id: number): Promise<Post | undefined> {
-		return Post.findOne(id);
+		const thePost = await getConnection().query(`
+		select p.*, json_build_object('id', u.id, 'username', u.username, 'email', u.email, 'createdAt', u."createdAt") "creator" from "post" p
+			inner join "user" u
+			on u.id = p."creatorId"
+			where p.id = ${id}
+		`);
+		return thePost[0];
 	}
 
 	/**
