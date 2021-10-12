@@ -102,12 +102,12 @@ export class UserResolver {
 	logout(@Ctx() {req, res}: MyContext) {
 		return new Promise((resolve) =>
 			req.session.destroy((err) => {
+				res.clearCookie(COOKIE_NAME, {secure: true});
 				if (err) {
 					console.error(err);
 					resolve(false);
 					return;
 				}
-				res.clearCookie(COOKIE_NAME);
 				resolve(true);
 			})
 		);

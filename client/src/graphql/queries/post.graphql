@@ -4,6 +4,7 @@ query Post($id: Float!) {
 		title
 		text
 		points
+		voteStatus
 		creatorId
 		createdAt
 		updatedAt

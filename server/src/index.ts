@@ -24,7 +24,7 @@ const main = async () => {
 		const redis = new Redis();
 		redis.connect(() => console.log(`Redis server running on port ${REDIS_PORT}`.magenta.bold));
 
-		app.use(cors({origin: ['*', 'http://localhost:3000'], credentials: true}));
+		app.use(cors({origin: ['http://localhost:3000'], credentials: true}));
 		app.use(
 			session({
 				name: COOKIE_NAME,

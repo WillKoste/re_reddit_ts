@@ -7,7 +7,9 @@ import gql from 'graphql-tag';
 
 export const client = createClient({
 	url: `https://127.0.0.1:5000/graphql`,
-	fetchOptions: {credentials: 'include'},
+	fetchOptions: () => ({
+		credentials: 'include'
+	}),
 	exchanges: [
 		dedupExchange,
 		cacheExchange({
@@ -71,20 +73,24 @@ export const client = createClient({
 								fragment _ on Post {
 									id
 									points
+									voteStatus
 								}
 							`,
 							{id: postId} as any
 						);
-						console.log({data, info});
 						if (data) {
-							const newPoints = data.points + value;
+							if (data.voteStatus === value) {
+								return;
+							}
+							const newPoints = data.points + (!data.voteStatus ? 1 : 2) * value;
 							cache.writeFragment(
 								gql`
 									fragment __ on Post {
 										points
+										voteStatus
 									}
 								`,
-								{id: postId, points: newPoints} as any
+								{id: postId, points: newPoints, voteStatus: value} as any
 							);
 						}
 					}

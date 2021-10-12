@@ -4,6 +4,7 @@ import Vote from '../layout/Vote';
 import {usePostsQuery} from '../../generated/graphql';
 import Wrapper from '../layout/Wrapper';
 import {Link} from 'react-router-dom';
+import {isInteger} from 'formik';
 
 interface PostsProps {}
 
