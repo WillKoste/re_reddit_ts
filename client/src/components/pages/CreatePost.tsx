@@ -37,7 +37,7 @@ const CreatePost: React.FC<CreatePostProps> = ({history, location}) => {
 					} else {
 						console.log({values});
 						await createPost({input: values});
-						history.push('/');
+						history.push('/posts');
 					}
 				}}
 			>

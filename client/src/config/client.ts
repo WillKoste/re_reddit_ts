@@ -1,38 +1,9 @@
-import {createClient, dedupExchange, fetchExchange, stringifyVariables} from 'urql';
-import {cacheExchange, Resolver} from '@urql/exchange-graphcache';
+import {createClient, dedupExchange, fetchExchange} from 'urql';
+import {cacheExchange} from '@urql/exchange-graphcache';
 import {betterUpdateQuery} from '../utils/betterUpdateQuery';
-import {ChangePasswordMutation, LoginMutation, LogoutMutation, MeDocument, MeQuery, RegisterMutation} from '../generated/graphql';
-
-const cursorPagination = (): Resolver => {
-	return (_parent, fieldArgs, cache, info) => {
-		const {parentKey: entityKey, fieldName} = info;
-		const allFields = cache.inspectFields(entityKey);
-		const fieldInfos = allFields.filter((info) => info.fieldName === fieldName);
-		const size = fieldInfos.length;
-		if (size === 0) {
-			return undefined;
-		}
-		const fieldKey = `${fieldName}(${stringifyVariables(fieldArgs)})`;
-		const isItInCache = cache.resolve(cache.resolve(entityKey, fieldKey) as string, 'posts');
-		info.partial = !isItInCache;
-		let hasMore = true;
-		const results: string[] = [];
-		fieldInfos.forEach((info) => {
-			const key = cache.resolve(entityKey, info.fieldKey) as string;
-			const data = cache.resolve(key, 'posts') as string[];
-			const _hasMore = cache.resolve(key, 'hasMore');
-			if (!_hasMore) {
-				hasMore = _hasMore as boolean;
-			}
-			results.push(...data);
-		});
-		return {
-			__typename: 'PaginatedPosts',
-			hasMore,
-			posts: results
-		};
-	};
-};
+import {ChangePasswordMutation, LoginMutation, LogoutMutation, MeDocument, MeQuery, RegisterMutation, VoteMutationVariables} from '../generated/graphql';
+import {cursorPagination} from './cursorPagination';
+import gql from 'graphql-tag';
 
 export const client = createClient({
 	url: `https://127.0.0.1:5000/graphql`,
@@ -85,14 +56,38 @@ export const client = createClient({
 								};
 							}
 						});
+					},
+					createPost: (_result, args, cache, info) => {
+						const allFields = cache.inspectFields('Query');
+						const fieldInfos = allFields.filter((info) => info.fieldName === 'posts');
+						fieldInfos.forEach((fi) => {
+							cache.invalidate('Query', 'posts', fi.arguments || {});
+						});
+					},
+					vote: (_result, args, cache, info) => {
+						const {postId, value} = args as VoteMutationVariables;
+						const data = cache.readFragment(
+							gql`
+								fragment _ on Post {
+									id
+									points
+								}
+							`,
+							{id: postId} as any
+						);
+						console.log({data, info});
+						if (data) {
+							const newPoints = data.points + value;
+							cache.writeFragment(
+								gql`
+									fragment __ on Post {
+										points
+									}
+								`,
+								{id: postId, points: newPoints} as any
+							);
+						}
 					}
-					// createPost: (_result, args, cache, info) => {
-					// 	betterUpdateQuery<CreatePostMutation, PostsQuery>(cache, {query: PostsDocument}, _result, (result, query) => {
-					// 		return {
-					// 			posts: result.createPost
-					// 		};
-					// 	});
-					// }
 				}
 			}
 		}),

@@ -2,6 +2,7 @@ import path from 'path';
 import {createConnection} from 'typeorm';
 import {DB_TYPE, PG_DATABASE, PG_HOST, PG_PASSWORD, PG_PORT, PG_USER} from './constants';
 import {Post} from './entities/Post';
+import {Upvote} from './entities/Upvote';
 import {User} from './entities/User';
 
 export const createTypeormConnection = async () => {
@@ -14,7 +15,7 @@ export const createTypeormConnection = async () => {
 		username: PG_USER,
 		synchronize: true,
 		migrations: [path.join(__dirname, 'migrations', '*')],
-		entities: [User, Post]
+		entities: [User, Post, Upvote]
 	});
 	await conn.runMigrations();
 };

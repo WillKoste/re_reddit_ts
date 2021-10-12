@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Heading, Box, Text, Stack, Flex, Button} from '@chakra-ui/react';
+import Vote from '../layout/Vote';
 import {usePostsQuery} from '../../generated/graphql';
 import Wrapper from '../layout/Wrapper';
 import {Link} from 'react-router-dom';
@@ -7,7 +8,7 @@ import {Link} from 'react-router-dom';
 interface PostsProps {}
 
 const Posts: React.FC<PostsProps> = () => {
-	const [variables, setVariables] = useState({limit: 10, cursor: null as null | string});
+	const [variables, setVariables] = useState({limit: 15, cursor: null as null | string});
 	const [{data, fetching}, getPosts] = usePostsQuery({variables});
 
 	useEffect(() => {
@@ -37,14 +38,15 @@ const Posts: React.FC<PostsProps> = () => {
 					<Stack spacing={8} mt={10}>
 						{data!.posts.posts.map((post) => {
 							return (
-								<Box key={post.id} p={6} shadow='md' display='flex' alignItems='center' justifyContent='space-between'>
-									<Box>
+								<Box key={post.id} p={6} pl={2} shadow='md' display='flex' alignItems='center' justifyContent='space-between'>
+									<Vote post={post as any} />
+									<Box flex={11}>
 										<Link to={`/posts/${post.id}`}>
 											<Heading size='md' mb={1}>
 												{post.title}
 											</Heading>
 											<Text mb={2} color='gray.400' fontSize='sm'>
-												By: {post.creator.username}
+												Posted by: {post.creator.username}
 											</Text>
 											<Text mb={2} color='gray.400' fontSize='sm'>
 												Posted on: {post.createdAt}
@@ -52,9 +54,7 @@ const Posts: React.FC<PostsProps> = () => {
 											<Text>{post.textSnippet}</Text>
 										</Link>
 									</Box>
-									<Box>
-										<Text fontSize='xl'>{post.points}</Text>
-									</Box>
+									<Box></Box>
 								</Box>
 							);
 						})}
