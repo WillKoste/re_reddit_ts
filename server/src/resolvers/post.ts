@@ -152,23 +152,20 @@ export class PostResolver {
 	 * @name Update Post
 	 */
 	@Mutation(() => Post, {nullable: true})
-	async updatePost(@Arg('id') id: number, @Arg('title', () => String, {nullable: true}) title: string): Promise<Post | undefined> {
-		const post = await Post.findOne(id);
-		if (!post) {
-			return undefined;
-		}
-		if (typeof post.title !== 'undefined') {
-			await Post.update({id}, {title});
-		}
-		return post;
+	@UseMiddleware(isAuth)
+	async updatePost(@Ctx() {req}: MyContext, @Arg('id') id: number, @Arg('text') text: string, @Arg('title') title: string): Promise<Post | undefined> {
+		const result = await getConnection().createQueryBuilder().update(Post).set({title, text}).where('id = :id and "creatorId" = :creatorId', {id, creatorId: req.session.userId}).returning('*').execute();
+
+		return result.raw[0];
 	}
 
 	/**
 	 * @name Delete User
 	 */
 	@Mutation(() => Boolean)
-	async deletePost(@Arg('id') id: number): Promise<boolean> {
-		await Post.delete(id);
+	@UseMiddleware(isAuth)
+	async deletePost(@Arg('id', () => Int) id: number, @Ctx() {req}: MyContext): Promise<boolean> {
+		await Post.delete({id, creatorId: req.session.userId});
 		return true;
 	}
 }

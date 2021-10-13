@@ -1,7 +1,7 @@
 import {createClient, dedupExchange, fetchExchange} from 'urql';
 import {cacheExchange} from '@urql/exchange-graphcache';
 import {betterUpdateQuery} from '../utils/betterUpdateQuery';
-import {ChangePasswordMutation, LoginMutation, LogoutMutation, MeDocument, MeQuery, RegisterMutation, VoteMutationVariables} from '../generated/graphql';
+import {ChangePasswordMutation, DeletePostMutationVariables, LoginMutation, LogoutMutation, MeDocument, MeQuery, RegisterMutation, VoteMutationVariables} from '../generated/graphql';
 import {cursorPagination} from './cursorPagination';
 import gql from 'graphql-tag';
 
@@ -93,6 +93,9 @@ export const client = createClient({
 								{id: postId, points: newPoints, voteStatus: value} as any
 							);
 						}
+					},
+					deletePost: (_result, args, cache, info) => {
+						cache.invalidate({__typename: 'Post', id: (args as DeletePostMutationVariables).id});
 					}
 				}
 			}

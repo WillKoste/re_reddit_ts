@@ -1,16 +1,17 @@
 import React, {useEffect, useState} from 'react';
-import {Heading, Box, Text, Stack, Flex, Button} from '@chakra-ui/react';
+import {Heading, Box, Text, Stack, Flex, Button, IconButton} from '@chakra-ui/react';
+import {DeleteIcon} from '@chakra-ui/icons';
 import Vote from '../layout/Vote';
-import {usePostsQuery} from '../../generated/graphql';
+import {useDeletePostMutation, usePostsQuery} from '../../generated/graphql';
 import Wrapper from '../layout/Wrapper';
 import {Link} from 'react-router-dom';
-import {isInteger} from 'formik';
 
 interface PostsProps {}
 
 const Posts: React.FC<PostsProps> = () => {
 	const [variables, setVariables] = useState({limit: 15, cursor: null as null | string});
 	const [{data, fetching}, getPosts] = usePostsQuery({variables});
+	const [{}, deletePost] = useDeletePostMutation();
 
 	useEffect(() => {
 		getPosts();
@@ -37,11 +38,11 @@ const Posts: React.FC<PostsProps> = () => {
 						</Button>
 					</Flex>
 					<Stack spacing={8} mt={10}>
-						{data!.posts.posts.map((post) => {
-							return (
+						{data!.posts.posts.map((post) =>
+							!post ? null : (
 								<Box key={post.id} p={6} pl={2} shadow='md' display='flex' alignItems='center' justifyContent='space-between'>
 									<Vote post={post as any} />
-									<Box flex={11}>
+									<Box flex={11} ml={1}>
 										<Link to={`/posts/${post.id}`}>
 											<Heading size='md' mb={1}>
 												{post.title}
@@ -55,10 +56,10 @@ const Posts: React.FC<PostsProps> = () => {
 											<Text>{post.textSnippet}</Text>
 										</Link>
 									</Box>
-									<Box></Box>
+									<IconButton icon={<DeleteIcon />} aria-label='Delete post' onClick={() => deletePost({id: post.id})} />
 								</Box>
-							);
-						})}
+							)
+						)}
 					</Stack>
 				</Box>
 			)}

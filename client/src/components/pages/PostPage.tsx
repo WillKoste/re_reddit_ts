@@ -19,20 +19,22 @@ const PostPage: React.FC<PostPageProps> = ({match}) => {
 		<Wrapper variant='large'>
 			{fetching ? (
 				<Text>Loading...</Text>
-			) : data ? (
+			) : data?.post ? (
 				<Fragment>
 					<Heading size='2xl' mb={3}>
 						{data.post?.title}
 					</Heading>
 					<Text fontSize='sm' mb={6}>
-						By: User {data.post?.creatorId}
+						Posted by: {data.post?.creator.username}
 					</Text>
 					<Text fontSize='lg'>{data.post?.text}</Text>
 					<Text p={2} bg='purple.500' color='white' display='inline-block' borderRadius='10px' my={5}>
 						Points: {data.post?.points}
 					</Text>
 				</Fragment>
-			) : null}
+			) : (
+				<Text>Aint no post {match.params.postId} found, sorry...</Text>
+			)}
 			<Button display='block'>
 				<Link to='/posts'>Go back</Link>
 			</Button>

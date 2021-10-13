@@ -15,7 +15,6 @@ export const createTypeormConnection = async () => {
 		username: PG_USER,
 		synchronize: true,
 		migrations: [path.join(__dirname, 'migrations', '*')],
-		// logging: true,
 		entities: [User, Post, Upvote]
 	});
 	await conn.runMigrations();
