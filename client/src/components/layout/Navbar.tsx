@@ -39,9 +39,10 @@ const Navbar: React.FC<NavbarProps> = ({history}) => {
 						variant='link'
 						color='steelblue'
 						mr={4}
-						onClick={() => {
+						onClick={async () => {
 							history.push('/login');
-							logout();
+							await logout();
+							history.go(0);
 						}}
 						isLoading={logoutFetching}
 					>

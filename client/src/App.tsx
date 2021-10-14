@@ -14,6 +14,7 @@ import ForgotPassword from './components/pages/ForgotPassword';
 import CreatePost from './components/pages/CreatePost';
 import Posts from './components/pages/Posts';
 import PostPage from './components/pages/PostPage';
+import EditPost from './components/pages/EditPost';
 
 const App = () => {
 	return (
@@ -32,6 +33,7 @@ const App = () => {
 							<Route exact path='/create-post' component={CreatePost} />
 							<Route exact path='/posts' component={Posts} />
 							<Route exact path='/posts/:postId' component={PostPage} />
+							<Route exact path='/posts/edit/:postId' component={EditPost} />
 							<Route component={NotFound} />
 						</Switch>
 					</ColorModeProvider>

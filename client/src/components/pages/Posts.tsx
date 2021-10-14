@@ -1,19 +1,21 @@
 import React, {useEffect, useState} from 'react';
 import {Heading, Box, Text, Stack, Flex, Button, IconButton} from '@chakra-ui/react';
-import {DeleteIcon} from '@chakra-ui/icons';
+import {DeleteIcon, EditIcon} from '@chakra-ui/icons';
 import Vote from '../layout/Vote';
-import {useDeletePostMutation, usePostsQuery} from '../../generated/graphql';
+import {useDeletePostMutation, useMeQuery, usePostsQuery} from '../../generated/graphql';
 import Wrapper from '../layout/Wrapper';
-import {Link} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 
-interface PostsProps {}
+interface PostsProps extends RouteComponentProps {}
 
-const Posts: React.FC<PostsProps> = () => {
+const Posts: React.FC<PostsProps> = ({history}) => {
 	const [variables, setVariables] = useState({limit: 15, cursor: null as null | string});
 	const [{data, fetching}, getPosts] = usePostsQuery({variables});
+	const [{data: meData}, getMe] = useMeQuery();
 	const [{}, deletePost] = useDeletePostMutation();
 
 	useEffect(() => {
+		getMe();
 		getPosts();
 	}, []);
 
@@ -38,8 +40,8 @@ const Posts: React.FC<PostsProps> = () => {
 						</Button>
 					</Flex>
 					<Stack spacing={8} mt={10}>
-						{data!.posts.posts.map((post) =>
-							!post ? null : (
+						{data!.posts.posts.map((post) => {
+							return !post ? null : (
 								<Box key={post.id} p={6} pl={2} shadow='md' display='flex' alignItems='center' justifyContent='space-between'>
 									<Vote post={post as any} />
 									<Box flex={11} ml={1}>
@@ -56,10 +58,15 @@ const Posts: React.FC<PostsProps> = () => {
 											<Text>{post.textSnippet}</Text>
 										</Link>
 									</Box>
-									<IconButton icon={<DeleteIcon />} aria-label='Delete post' onClick={() => deletePost({id: post.id})} />
+									{post.creatorId === meData?.me?.id ? (
+										<Box display='flex'>
+											<IconButton icon={<EditIcon />} aria-label='Update post' mr={2} onClick={() => history.push(`/posts/edit/${post.id}`)} />
+											<IconButton icon={<DeleteIcon />} aria-label='Delete post' onClick={() => deletePost({id: post.id})} />
+										</Box>
+									) : null}
 								</Box>
-							)
-						)}
+							);
+						})}
 					</Stack>
 				</Box>
 			)}

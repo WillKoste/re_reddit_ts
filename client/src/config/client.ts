@@ -4,6 +4,7 @@ import {betterUpdateQuery} from '../utils/betterUpdateQuery';
 import {ChangePasswordMutation, DeletePostMutationVariables, LoginMutation, LogoutMutation, MeDocument, MeQuery, RegisterMutation, VoteMutationVariables} from '../generated/graphql';
 import {cursorPagination} from './cursorPagination';
 import gql from 'graphql-tag';
+import {invalidateAllPosts} from './invalidateAllPosts';
 
 export const client = createClient({
 	url: `https://127.0.0.1:5000/graphql`,
@@ -33,6 +34,7 @@ export const client = createClient({
 								};
 							}
 						});
+						invalidateAllPosts(cache);
 					},
 					register: (_result, args, cache, info) => {
 						betterUpdateQuery<RegisterMutation, MeQuery>(cache, {query: MeDocument}, _result, (result, query) => {
@@ -60,11 +62,7 @@ export const client = createClient({
 						});
 					},
 					createPost: (_result, args, cache, info) => {
-						const allFields = cache.inspectFields('Query');
-						const fieldInfos = allFields.filter((info) => info.fieldName === 'posts');
-						fieldInfos.forEach((fi) => {
-							cache.invalidate('Query', 'posts', fi.arguments || {});
-						});
+						invalidateAllPosts(cache);
 					},
 					vote: (_result, args, cache, info) => {
 						const {postId, value} = args as VoteMutationVariables;

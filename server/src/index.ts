@@ -15,6 +15,8 @@ import session from 'express-session';
 import connectRedis from 'connect-redis';
 import cors from 'cors';
 import {createTypeormConnection} from './typeormConfig';
+import {createUserLoader} from './utils/createUserLoader';
+import {createUpvoteLoader} from './utils/createUpvoteLoader';
 
 const main = async () => {
 	try {
@@ -45,7 +47,7 @@ const main = async () => {
 				resolvers: [HelloResolver, PostResolver, UserResolver],
 				validate: false
 			}),
-			context: ({req, res}) => ({req, res, redis})
+			context: ({req, res}) => ({req, res, redis, userLoader: createUserLoader(), upvoteLoader: createUpvoteLoader()})
 		});
 
 		await apolloServer.start();
