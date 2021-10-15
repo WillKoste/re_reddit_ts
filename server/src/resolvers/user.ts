@@ -2,7 +2,6 @@ import {Resolver, Mutation, Arg, Field, Ctx, ObjectType, Query, Int, FieldResolv
 import {MyContext} from '../types';
 import {User} from '../entities/User';
 import argon2 from 'argon2';
-import {COOKIE_NAME, FORGET_PASSWORD_PREFIX} from '../constants';
 import {validateRegister} from '../utils/validateRegister';
 import {sendEmail} from '../utils/sendEmail';
 import {v4 as uuidv4} from 'uuid';
@@ -102,7 +101,7 @@ export class UserResolver {
 	logout(@Ctx() {req, res}: MyContext) {
 		return new Promise((resolve) =>
 			req.session.destroy((err) => {
-				res.clearCookie(COOKIE_NAME, {
+				res.clearCookie(process.env.COOKIE_NAME, {
 					secure: true,
 					sameSite: 'none'
 				});
@@ -126,7 +125,7 @@ export class UserResolver {
 			return true;
 		}
 		const token: string = uuidv4();
-		await redis.set(FORGET_PASSWORD_PREFIX + token, theUser.id, 'ex', 1000 * 60 * 60 * 3);
+		await redis.set(process.env.FORGET_PASSWORD_PREFIX + token, theUser.id, 'ex', 1000 * 60 * 60 * 3);
 
 		await sendEmail(
 			email,
@@ -152,7 +151,7 @@ export class UserResolver {
 			};
 		}
 
-		const key = FORGET_PASSWORD_PREFIX + resetId;
+		const key = process.env.FORGET_PASSWORD_PREFIX + resetId;
 		const userId = await redis.get(key);
 		if (!userId) {
 			return {

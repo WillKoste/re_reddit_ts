@@ -1,9 +1,10 @@
 import 'reflect-metadata';
 import 'colors';
-import path from 'path';
-import fs from 'fs';
-import https from 'https';
-import {__prod__, COOKIE_NAME, PORT, NODE_ENV, SESSION_SECRET, REDIS_PORT} from './constants';
+// import path from 'path';
+// import fs from 'fs';
+// import https from 'https';
+import 'dotenv-safe/config';
+import {__prod__} from './constants';
 import express from 'express';
 import {ApolloServer} from 'apollo-server-express';
 import {buildSchema} from 'type-graphql';
@@ -23,14 +24,14 @@ const main = async () => {
 		createTypeormConnection();
 		const app = express();
 		const RedisStore = connectRedis(session);
-		const redis = new Redis();
-		redis.connect(() => console.log(`Redis server running on port ${REDIS_PORT}`.magenta.bold));
+		const redis = new Redis(process.env.REDIS_URL);
+		redis.connect(() => console.log(`Redis server running on port ${process.env.REDIS_PORT}`.magenta.bold));
 
-		app.use(cors({origin: ['http://localhost:3000'], credentials: true}));
+		app.use(cors({origin: [process.env.CORS_ORIGIN], credentials: true}));
 		app.use(
 			session({
-				name: COOKIE_NAME,
-				secret: SESSION_SECRET,
+				name: process.env.COOKIE_NAME,
+				secret: process.env.SESSION_SECRET,
 				store: new RedisStore({client: redis, disableTouch: true}),
 				cookie: {
 					maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
@@ -53,20 +54,12 @@ const main = async () => {
 		await apolloServer.start();
 		apolloServer.applyMiddleware({app, cors: false});
 
-		const port = PORT || 5001;
-		const mode = NODE_ENV || 'DEFAULT';
+		const port = process.env.PORT || 5001;
+		const mode = process.env.NODE_ENV || 'DEFAULT';
 
-		https
-			.createServer(
-				{
-					key: fs.readFileSync(path.join(__dirname, '../', './server.key')),
-					cert: fs.readFileSync(path.join(__dirname, '../', './server.cert'))
-				},
-				app
-			)
-			.listen(port, () => {
-				console.log(`Express server running on port ${port}, in ${mode} mode!`.cyan.underline.bold);
-			});
+		app.listen(port, () => {
+			console.log(`Express server running on port ${port}, in ${mode} mode!`.cyan.underline.bold);
+		});
 	} catch (err) {
 		console.error(err);
 	}

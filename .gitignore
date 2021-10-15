@@ -1,6 +1,7 @@
 # GLOBAL
 node_modules/
 *.env
+*.env.*
 
 # SERVER
 server/dist
@@ -9,3 +10,4 @@ server/server.cert
 server/constants.ts
 
 # CLIENT
+client/build/
